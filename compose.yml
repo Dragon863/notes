@@ -1,0 +1,54 @@
+services:
+  couchdb:
+    image: couchdb:latest
+    container_name: couchdb-for-ols
+    user: 5984:5984
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+    volumes:
+      - ./couchdb-data:/opt/couchdb/data
+      - ./couchdb-etc:/opt/couchdb/etc/local.d
+    ports:
+      - 5984:5984
+    restart: unless-stopped
+  obsidian:
+    image: lscr.io/linuxserver/obsidian:latest
+    container_name: obsidian
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - ./config:/config
+    ports:
+      - 3999:3000
+    shm_size: "1gb"
+    restart: unless-stopped
+
+  quartz:
+    build:
+      context: ./quartz
+    container_name: quartz
+    restart: unless-stopped
+    init: true
+    command:
+      - npx
+      - quartz
+      - build
+      - --directory
+      - /vault
+      - --serve
+      - --port
+      - "8080"
+      - --wsPort
+      - "3001"
+    ports:
+      - "127.0.0.1:8080:8080"
+    expose:
+      - "3001"
+    volumes:
+      - type: bind
+        source: ./config/Uni Notes/Uni Notes
+        target: /vault
+        read_only: true
